@@ -1,0 +1,10 @@
+# ye ye batata hai ki kon kon si file me prettier ko ignore karna hai 
+
+/.vscode
+/node_modules
+./dist
+
+*.env
+.env
+.env.*
+
