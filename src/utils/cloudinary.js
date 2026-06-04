@@ -16,6 +16,11 @@ const uploadOnCloudinary = async (localFilePath) => {
       resource_type: "auto",
     });
     // file has been uploaded successfull
+
+
+    //maine yhn pe pehle hi unlink krr diya tha isliye jb mai part 14 me file upload krr rha tha mere temp pe nhi 
+    // aa rhi thi 
+    
     //console.log("file is uploaded on cloudinary ", response.url);
     fs.unlinkSync(localFilePath);
     return response;

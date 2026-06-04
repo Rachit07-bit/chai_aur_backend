@@ -149,7 +149,19 @@ const registerUser = asyncHandler( async (req,res) => {
   instead of throwing an error because of optional chaining (?.).
 */
   // to pura mtlb yhi hai ki req.files me se avatar ke first field ka local path kya hai yhi likha hai
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  //mai assume krr rha hun ki req.files hun to coveriamge hogi uska pehle ka path lelo 
+
+  //avatar ko to maine user define karne se pehle check krr liya ki hai ya nhi hai but coverImage ko nhi kiya hai 
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
+  //isse error nhi aaega agar coverImage nhi bhejte to 
+
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
@@ -248,7 +260,7 @@ return res
   .json(new ApiResponse(200, createdUser, "User registered Successfully"));
 
 
-  
+
   // res.status(200).json({
   //     message:"ok"
   // })

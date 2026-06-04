@@ -67,7 +67,7 @@ userSchema.pre("save", async function (next) {
   //
   // Without this check, every save operation would hash the already
   // hashed password again, making login impossible.
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password")) return ;
 
   // Convert the plain-text password into a secure hashed password.
   //
@@ -82,8 +82,26 @@ userSchema.pre("save", async function (next) {
 
   // Tell Mongoose that this middleware has finished
   // and it can continue saving the document.
-  next();
+  
 });
+
+// Notes:
+// • Mongoose pre middleware supports callback-based and async/await styles.
+// • When using async function, next() is not required.
+// • Mongoose automatically waits for the async function to complete.
+// • Using next() with async middleware may cause: TypeError: next is not a function.
+// • Removing next() does not affect password hashing.
+// • Removing next() does not affect user registration.
+// • Removing next() does not affect login functionality.
+// • Modern Mongoose projects prefer async/await middleware without next().
+
+//pta nhi isme error aa rha tha
+// userSchema.pre("save", async function (next) {
+//   if (!this.isModified("password")) return next();
+
+//   this.password = await bcrypt.hash(this.password, 10);
+//   next();
+// });
 
 
 // ================= MIDDLEWARE 2 =================
