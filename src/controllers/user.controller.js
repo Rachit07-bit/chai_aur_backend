@@ -10,6 +10,31 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 
+//ye tokens banane ka kaam kai baar karoge isliye tehrefore we are creating a method for This
+const generateAccessAndRefereshTokens = async (userId) => {
+  try {
+    //user ko userId se find karke access or refresh token generate kara diya
+    const user = await User.findById(userId);
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    //data base me save bhi kar diya
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+    //We use validateBeforeSave: false because we are only saving the refreshToken and don’t want
+    // Mongoose to re-run all user schema validations unnecessarily.
+    //thats why validateBeforeSave: false 
+
+    return { accessToken, refreshToken };
+
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating referesh and access token"
+    );
+  }
+};
+
 const registerUser = asyncHandler( async (req,res) => {
   //steps
   //get user details from frontend
@@ -265,5 +290,116 @@ return res
   //     message:"ok"
   // })
 })
+
+
+const loginUser = asyncHandler(async (req, res) => {
+  // req body -> data
+  // username or email
+  //find the user
+  //password check
+  // password check hua to access or refresh token generate karke user ko bhejunga
+  //access and referesh token
+  //send cookie
+
+  const { email, username, password } = req.body;
+  console.log(email);
+
+  if (!username && !email) {
+    throw new ApiError(400, "username or email is required");
+  }
+
+  // Here is an alternative of above code based on logic discussed in video:
+  // if (!(username || email)) {
+  //     throw new ApiError(400, "username or email is required")
+
+  // }
+
+  const user = await User.findOne({
+    $or: [{ username }, { email }],
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+
+  // ye middlewares hum apne user ke liye lagaenge kyuki yaad hoga wo to this. se nikal leta tha wo mongodb ke
+  //mongoose se awailable hote but hum ye middlewares define kiye the apne user ke liye jo instance hai , humne
+  //database se nikale hian unme
+  //to dhyan rkhna user hoga User nhi
+  const isPasswordValid = await user.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid user credentials");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+    user._id
+  );
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+  //ab ye cookies keval server se modify ho skti hain koi bhi frontend me inhe modify nhi kr skta 
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        //statuscode
+        200,
+        //data wla part 
+        {
+          user: loggedInUser,
+          accessToken,
+          refreshToken,
+        },
+        //messages
+        "User logged In Successfully"
+      )
+    );
+});
+
+
+const logoutUser = asyncHandler(async (req, res) => {
+
+  //mujhe cookies jo hongi wo hatani pddengi 
+  //access refress token bhi to htne chiye 
+
+  //to ye sb krne ke liye find karna hoga user ko user kaise find karen yhn 
+  //ye to dikkat ki baat ho gyi , id khn hai ki mai find by id se pta krr lun (findById) 
+  //login me humne req.body se email ,user ye sb liya tha to whn access kar skte the yhn kaise karun
+  //middleware -> jaane se pehle milke jaana
+  //to ab hum khud se middleware banaenge 
+  
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $unset: {
+        refreshToken: 1, // this removes the field from document
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, {}, "User logged Out"));
+});
 
 export {registerUser}
