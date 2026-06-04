@@ -88,14 +88,14 @@ app.use(cookieParser());
 // comment.routes.js -> comment related APIs
 
 import userRouter from "./routes/user.routes.js";
-import healthcheckRouter from "./routes/healthcheck.routes.js";
-import tweetRouter from "./routes/tweet.routes.js";
-import subscriptionRouter from "./routes/subscription.routes.js";
-import videoRouter from "./routes/video.routes.js";
-import commentRouter from "./routes/comment.routes.js";
-import likeRouter from "./routes/like.routes.js";
-import playlistRouter from "./routes/playlist.routes.js";
-import dashboardRouter from "./routes/dashboard.routes.js";
+// import healthcheckRouter from "./routes/healthcheck.routes.js";
+// import tweetRouter from "./routes/tweet.routes.js";
+// import subscriptionRouter from "./routes/subscription.routes.js";
+// import videoRouter from "./routes/video.routes.js";
+// import commentRouter from "./routes/comment.routes.js";
+// import likeRouter from "./routes/like.routes.js";
+// import playlistRouter from "./routes/playlist.routes.js";
+// import dashboardRouter from "./routes/dashboard.routes.js";
 
 // ================= ROUTE REGISTRATION =================
 
@@ -107,7 +107,7 @@ import dashboardRouter from "./routes/dashboard.routes.js";
 
 // Used to check whether server is alive or not.
 // Commonly used by monitoring systems.
-app.use("/api/v1/healthcheck", healthcheckRouter);
+// app.use("/api/v1/healthcheck", healthcheckRouter);
 
 // All user-related APIs come here.
 //
@@ -131,25 +131,25 @@ app.use("/api/v1/users", userRouter);
 // Example:
 // /api/v1/tweets/create
 // /api/v1/tweets/delete
-app.use("/api/v1/tweets", tweetRouter);
+// app.use("/api/v1/tweets", tweetRouter);
 
 // All subscription-related APIs
-app.use("/api/v1/subscriptions", subscriptionRouter);
+// app.use("/api/v1/subscriptions", subscriptionRouter);
 
 // All video-related APIs
-app.use("/api/v1/videos", videoRouter);
+// app.use("/api/v1/videos", videoRouter);
 
 // All comment-related APIs
-app.use("/api/v1/comments", commentRouter);
+// app.use("/api/v1/comments", commentRouter);
 
 // All like-related APIs
-app.use("/api/v1/likes", likeRouter);
+// app.use("/api/v1/likes", likeRouter);
 
 // All playlist-related APIs
-app.use("/api/v1/playlist", playlistRouter);
+// app.use("/api/v1/playlist", playlistRouter);
 
 // All dashboard-related APIs
-app.use("/api/v1/dashboard", dashboardRouter);
+// app.use("/api/v1/dashboard", dashboardRouter);
 
 // Example flow:
 //
@@ -170,3 +170,4 @@ app.use("/api/v1/dashboard", dashboardRouter);
 // Response returned to client
 
 export { app };
+

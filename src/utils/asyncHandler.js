@@ -7,10 +7,16 @@ const asyncHandler = (requestHandler) => {
         Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err))
     }
 }
-
+// Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err)) 
+// executes the controller function and converts its result into a Promise.
+//  If the controller runs successfully, nothing special happens and the response is sent normally. 
+// However, if any error occurs during execution, the Promise is rejected and the .catch() block runs.
+// The error is then passed to next(err), which forwards it to Express’s error-handling middleware.
+// This allows centralized error handling and eliminates the need to write separate try...catch 
+// blocks in every async controller.
 
 export { asyncHandler }
-
+ 
 
 
 
