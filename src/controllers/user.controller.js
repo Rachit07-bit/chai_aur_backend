@@ -8,7 +8,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 //isse local paths hi chiye thi dekh lo jaake cloudinary me upload karne ke liye 
 
 import { ApiResponse } from "../utils/ApiResponse.js";
-
+import jwt from "jsonwebtoken";
 
 //ye tokens banane ka kaam kai baar karoge isliye tehrefore we are creating a method for This
 const generateAccessAndRefereshTokens = async (userId) => {
@@ -178,6 +178,7 @@ const registerUser = asyncHandler( async (req,res) => {
   //mai assume krr rha hun ki req.files hun to coveriamge hogi uska pehle ka path lelo 
 
   //avatar ko to maine user define karne se pehle check krr liya ki hai ya nhi hai but coverImage ko nhi kiya hai 
+  let coverImageLocalPath;
   if (
     req.files &&
     Array.isArray(req.files.coverImage) &&
@@ -317,6 +318,13 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     $or: [{ username }, { email }],
   });
+//   This code searches the database for one user whose:
+
+// * username matches the given username
+//     OR
+// * email matches the given email
+
+// $or means “at least one condition should be true”.
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
@@ -402,4 +410,124 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
 
-export {registerUser}
+
+/*
+  refreshAccessToken controller
+
+  Purpose:
+  - Jab Access Token expire ho jaye tab use naya Access Token dena
+  - User ko dobara login karne ki zarurat na pade
+  - Refresh Token verify karke naye tokens generate karna
+*/
+const refreshAccessToken = asyncHandler(async (req, res) => {
+
+    // Refresh Token cookies ya request body se lo
+    // Usually cookies me stored hota hai
+    const incomingRefreshToken =
+        req.cookies.refreshToken || req.body.refreshToken;
+
+    // Agar refresh token hi nahi mila
+    // to user unauthorized hai
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "unauthorized request");
+    }
+
+    try {
+
+        // Refresh Token verify karo
+        // Check:
+        // - Original hai ya nahi
+        // - Expire to nahi hua
+        // - Secret key sahi hai ya nahi
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        );
+
+        // Token ke andar stored user id se user fetch karo
+        const user = await User.findById(decodedToken?._id);
+
+        // User database me nahi mila
+        if (!user) {
+            throw new ApiError(401, "Invalid refresh token");
+        }
+
+        /*
+          Extra security check
+
+          Compare:
+          Token sent by client
+          vs
+          Token stored in database
+
+          Agar match nahi hua:
+          - Token replace ho gaya
+          - Token reuse hua
+          - User logout kar chuka hai
+        */
+        if (incomingRefreshToken !== user?.refreshToken) {
+            throw new ApiError(
+                401,
+                "Refresh token is expired or used"
+            );
+        }
+
+        // Cookie options
+        const options = {
+            httpOnly: true,
+            secure: true
+        };
+
+        /*
+          Generate new tokens
+
+          Example:
+
+          Old Access Token  -> Expired
+          Old Refresh Token -> Valid
+
+          Generate:
+
+          New Access Token
+          New Refresh Token
+        */
+        const {
+            accessToken,
+            newRefreshToken
+        } = await generateAccessAndRefereshTokens(user._id);
+
+        /*
+          New tokens cookies me set karo
+          aur response me bhi bhejo
+        */
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        accessToken,
+                        refreshToken: newRefreshToken
+                    },
+                    "Access token refreshed"
+                )
+            );
+
+    } catch (error) {
+
+        // Invalid token
+        // Expired token
+        // Wrong secret
+        // User not found
+
+        throw new ApiError(
+            401,
+            error?.message || "Invalid refresh token"
+        );
+    }
+});
+
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken };
